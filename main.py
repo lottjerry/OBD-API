@@ -1,20 +1,23 @@
-from fastapi import FastAPI, JSONResponse
+from fastapi import FastAPI
 import obd
 
 app = FastAPI()
-connection = obd.OBD() # auto-connects to serial or bluetooth
+connection = obd.OBD()  # Auto-connect to OBD adapter
 
 @app.get("/")
 def root():
-  return {"Hello World"}
+    return {"message": "Hello World"}
+  
 
 @app.get("/data")
 def get_obd_data():
-    if connection.is_connected(): # If there is a connection
-        cmd = obd.commands.SPEED # select an OBD command (sensor)
-        response = connection.query(cmd) # send the command, and parse the response
-        if response.is_null(): # if there is a response
-            return {"Error": "Unable to get value"}
-        return {"speed": response.value.to("mph")}
+    if connection.is_connected():  # Check OBD connection
+        cmd = obd.commands.SPEED  # Select speed command
+        response = connection.query(cmd)  # Query the OBD adapter
+
+        if response.value is None:  # Ensure there's a valid response
+            return {"error": "Unable to get value"}
+        
+        return {"speed": response.value.to("mph")}  # Convert speed to mph
     else:
-        return {"Error": "Not connected to OBD adapter"}
+        return {"error": "Not connected to OBD adapter"}

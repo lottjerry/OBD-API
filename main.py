@@ -1,13 +1,28 @@
 from fastapi import FastAPI
 import obd
+import logging
+
 
 app = FastAPI()
+
+# Setup in-memory log capture
+log_capture = []
+class LogHandler(logging.Handler):
+    def emit(self, record):
+        log_capture.append(self.format(record))
+        
+# Configure logging
+logger = logging.getLogger("obd")
+logger.setLevel(logging.DEBUG)
+log_handler = LogHandler()
+log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(log_handler)
+        
 connection = obd.OBD()  # Auto-connect to OBD adapter
 
 @app.get("/")
 def root():
     return {"message": "Hello World"}
-  
 
 @app.get("/data")
 def get_obd_data():
@@ -21,3 +36,8 @@ def get_obd_data():
         return {"speed": response.value.to("mph")}  # Convert speed to mph
     else:
         return {"error": "Not connected to OBD adapter"}
+
+@app.get("/logs")
+def get_logs():
+    """Fetch OBD logs from memory"""
+    return {"logs": log_capture}
